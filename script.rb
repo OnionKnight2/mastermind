@@ -18,6 +18,7 @@ Player class holds the player's name and number of guesses left. Initialized num
 is always 12.
 
 It has overriden #to_s method to print some information about the player.
+Player can choose between being the creator or the guesser. It's his role.
 
 ---------------------------------------------------------------------------------------------------------
 
@@ -41,7 +42,9 @@ Instance method won? checks if the user guessed correctly.
 
 Instance method over? checks if the user wasted all of his attempts
 
-Instance method intro just prompts user and greets him.
+Instance method intro prompts user and greets him. Also, 
+it asks user if he's taking on a role of a creator or a guesser.
+If user is a guesser, computer will generate a code.
 
 Instance method play plays the game until the user won or missed all attempts.
 User has to enter one of the existing colors.
@@ -55,10 +58,11 @@ module Mastermind
     COLORS = ['black', 'white', 'red', 'blue', 'green', 'yellow']
 
     class Player
-        attr_accessor :name, :number_of_guesses
+        attr_accessor :name, :number_of_guesses, :role
         def initialize(name = "Unknown")
             @name = name
             @number_of_guesses = 0
+            @role = "guesser"
         end
 
         def to_s
@@ -122,15 +126,28 @@ module Mastermind
             puts "Hello, #{player.name} and welcome to MASTERMIND!"
             puts ""
 
-            puts "Computer will now randomly select a code..."
-            computer.make_code
-            puts ""
-            sleep(1)
+            user_input = ""
+            loop do 
+                puts "Select your role: creator or guesser?"  
+                user_input = gets.chomp
+                if user_input == "creator" || user_input == "guesser"
+                    break
+                end
+            end
+            player.role = user_input
 
-            puts "When prompted, please enter your code. You have these colors at your disposal: "
-            puts COLORS.join("  ")
-            puts ""
-            sleep(1)
+            if (player.role == "guesser")
+                puts "When prompted, please enter your code. You have these colors at your disposal: "
+                puts COLORS.join("  ")
+                puts ""
+                sleep(1)
+
+                puts "Computer will now randomly select a code..."
+                computer.make_code
+                puts ""
+                sleep(1)
+            end
+
         end
 
         def check_guess
@@ -140,8 +157,6 @@ module Mastermind
             on_target = on_target(computer.code, board.board_status[player.number_of_guesses - 1])
             close = same(computer.code, board.board_status[player.number_of_guesses - 1]) - on_target
             
-            puts computer.code
-
             puts ""
             puts "#{on_target} ON TARGET"
             puts "#{close} CLOSE"
