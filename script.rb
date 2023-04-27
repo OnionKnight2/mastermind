@@ -20,9 +20,12 @@ is always 12.
 It has overriden #to_s method to print some information about the player.
 Player can choose between being the creator or the guesser. It's his role.
 
+Player also needs a capability of generating code.
+
 ---------------------------------------------------------------------------------------------------------
 
 Computer class holds randomly instance variable code. Code is genereted with #make_code instance method.
+Computer also holds number of guesses so we can keep track when computer is the one guessing.
 
 It has overriden #to_s method so the code can be eventualy printed.
 
@@ -50,6 +53,9 @@ Instance method play plays the game until the user won or missed all attempts.
 User has to enter one of the existing colors.
 After every acceptable guess, user receives information about his guess.
 Message he receives looks something like this: "1 ON TARGET, 2 CLOSE"
+
+If the user accepts creator role, then the computer needs to play the game instead.
+Computer randomly guesses 12 times.
 
 ---------------------------------------------------------------------------------------------------------
 =end
@@ -88,13 +94,16 @@ module Mastermind
     end
 
     class Computer
-        attr_reader :code
+        attr_reader :code 
+        attr_accessor :number_of_guesses
         def initialize
             @code = []
+            @number_of_guesses = 0
         end
 
         # generate random code from possible colors. There can be repeats.
         def make_code
+            @code = []
             4.times {code.push(COLORS.sample)}
             code
         end
@@ -129,12 +138,20 @@ module Mastermind
             @current_guess = ""
         end
 
-        def won?
+        def player_won?
             board.board_status.any? {|guesses| guesses == computer.code} 
         end
             
-        def over?
+        def player_over?
             player.number_of_guesses == 12
+        end
+
+        def computer_won?
+            board.board_status.any? {|guesses| guesses == player.code}
+        end
+
+        def computer_over?
+            computer.number_of_guesses == 12
         end
 
         def intro
@@ -189,34 +206,56 @@ module Mastermind
         def play
             intro
 
-            until won? || over?
-                puts "Guess #{player.number_of_guesses+1} of 12"
-                escape = false                           # Use this to escape from current iteration of the parent loop
-                4.times do |i|
-                    @current_guess = gets.chomp 
-                    escape = true unless COLORS.include?(current_guess)
-                    if escape
-                        puts "Invalid command!!!"
-                        puts ""
-                        break
+            if player.role == "guesser"
+                until player_won? || player_over?
+                    puts "Guess #{player.number_of_guesses+1} of 12"
+                    escape = false                           # Use this to escape from current iteration of the parent loop
+                    4.times do |i|
+                        @current_guess = gets.chomp 
+                        escape = true unless COLORS.include?(current_guess)
+                        if escape
+                            puts "Invalid command!!!"
+                            puts ""
+                            break
+                        end
+                        board.board_status[player.number_of_guesses][i] = current_guess
                     end
-                    board.board_status[player.number_of_guesses][i] = current_guess
+                    if escape
+                        next
+                    end
+                    player.number_of_guesses += 1
+                    board.to_s
+                    puts ""
+
+                    check_guess
                 end
-                if escape
-                    next
-                end
-                player.number_of_guesses += 1
+
+                if player_won?
+                    puts "Congratulations #{player.name}, you cracked the code in #{player.number_of_guesses} attempts!"
+                elsif player_over?
+                    puts "Sorry #{player.name}, you are out of attempts :("
+                end    
+
+            elsif player.role == "creator"
+                # First computer's guess is completely randomized
+                puts "Guess #{computer.number_of_guesses + 1} of 12"
+                board.board_status[computer.number_of_guesses] = computer.make_code
+                computer.number_of_guesses += 1
                 board.to_s
-                puts ""
+                until computer_won? || computer_over?
+                    puts "Guess #{computer.number_of_guesses + 1} of 12"
+                    board.board_status[computer.number_of_guesses] = computer.make_code
+                    computer.number_of_guesses += 1
+                    board.to_s
+                    puts ""
+                end
 
-                check_guess
+                if computer_won?
+                    puts "Too bad, computer has managed to crack your code in #{computer.number_of_guesses} attempts!"
+                elsif computer_over?
+                    puts "Well done, #{player.name}. Your code was unbreakable."
+                end
             end
-
-            if won?
-                puts "Congratulations #{player.name}, you cracked the code in #{player.number_of_guesses} attempts!"
-            elsif over?
-                puts "Sorry #{player.name}, you are out of attempts :("
-            end    
         end
     end
 
