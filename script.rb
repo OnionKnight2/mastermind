@@ -58,11 +58,28 @@ module Mastermind
     COLORS = ['black', 'white', 'red', 'blue', 'green', 'yellow']
 
     class Player
-        attr_accessor :name, :number_of_guesses, :role
+        attr_accessor :name, :number_of_guesses, :role, :code
         def initialize(name = "Unknown")
             @name = name
             @number_of_guesses = 0
             @role = "guesser"
+            @code = []
+        end
+
+        def make_code
+            4.times do |i| 
+                puts ""
+                loop do 
+                    puts "Select your #{i + 1}. color: "  
+                    user_input = gets.chomp
+                    if COLORS.include?(user_input) 
+                        code.push(user_input)
+                        break
+                    end
+                end
+            end
+
+            code
         end
 
         def to_s
@@ -144,6 +161,12 @@ module Mastermind
 
                 puts "Computer will now randomly select a code..."
                 computer.make_code
+                puts ""
+                sleep(1)
+            elsif (player.role == "creator")
+                player.make_code
+                puts ""
+                "Computer will now play the game..."
                 puts ""
                 sleep(1)
             end
